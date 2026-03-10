@@ -49,6 +49,11 @@ export function PantPostCard({ post, userLocation, currentUserId, onClose, onEdi
 
   const isOwner = currentUserId === post.user_id
 
+  // Synka localStatus med realtime-uppdateringar från post-proppen
+  useEffect(() => {
+    setLocalStatus(post.status)
+  }, [post.status])
+
   // Kolla om nuvarande användare är den som paxxat (körs vid mount + vid statusändring)
   useEffect(() => {
     if (localStatus !== 'claimed' || !currentUserId) return
@@ -216,9 +221,10 @@ export function PantPostCard({ post, userLocation, currentUserId, onClose, onEdi
             )}
 
             {localStatus === 'claimed' && !isClaimer && (
-              <p className="text-center text-sm text-muted-foreground">
-                Någon är redan på väg hit
-              </p>
+              <Button className="w-full" disabled variant="secondary">
+                <Package className="mr-2 h-4 w-4" />
+                Redan paxxad av någon annan
+              </Button>
             )}
           </div>
         )}
