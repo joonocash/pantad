@@ -16,7 +16,7 @@ import { EditPantSheet } from './edit-pant-sheet'
 import { PantPostCard } from './pant-post-card'
 import { cn } from '@/lib/utils'
 
-const STOCKHOLM_CENTER = { lat: 59.3293, lng: 18.0686 }
+const GOTHENBURG_CENTER = { lat: 57.7089, lng: 11.9746 }
 
 interface MapViewProps {
   initialPosts: (PantPost & { profiles?: Pick<Profile, 'username' | 'avatar_url'> })[]
@@ -28,7 +28,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
   const [selectedPost, setSelectedPost] = useState<PantPost | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [mapCenter, setMapCenter] = useState(STOCKHOLM_CENTER)
+  const [mapCenter, setMapCenter] = useState(GOTHENBURG_CENTER)
   const [mode, setMode] = useState<'drop' | 'collect'>(profile?.current_mode ?? 'collect')
   const [droppedPin, setDroppedPin] = useState<{ lat: number; lng: number } | null>(null)
   const [editPost, setEditPost] = useState<PantPost | null>(null)
