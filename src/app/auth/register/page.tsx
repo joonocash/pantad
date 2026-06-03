@@ -38,7 +38,7 @@ export default function RegisterPage() {
     }
 
     toast.success('Konto skapat! Välkommen till Pantad.')
-    router.push('/map')
+    router.push('/onboarding')
     router.refresh()
   }
 

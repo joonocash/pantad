@@ -16,6 +16,8 @@ export default async function MapPage() {
     .eq('id', user.id)
     .single()
 
+  if (profile && !profile.onboarded) redirect('/onboarding')
+
   const { data: posts } = await supabase
     .from('pant_posts')
     .select('*, profiles(username, avatar_url)')

@@ -4,6 +4,8 @@ import { Navbar } from '@/components/navbar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, DEFAULT_AVATAR } from '@/components/avatar'
+import { AvatarConfig } from '@/types/database'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -15,7 +17,7 @@ export default async function LeaderboardPage() {
 
   const { data: topUsers } = await supabase
     .from('profiles')
-    .select('id, username, xp, total_cans, level')
+    .select('id, username, xp, total_cans, level, avatar_config')
     .order('xp', { ascending: false })
     .limit(50)
 
@@ -33,22 +35,26 @@ export default async function LeaderboardPage() {
 
         {topUsers?.map((u, i) => {
           const isCurrentUser = u.id === user.id
+          const avatarConfig = (u.avatar_config as AvatarConfig | null) ?? DEFAULT_AVATAR
           return (
             <Card
               key={u.id}
               className={isCurrentUser ? 'border-primary ring-1 ring-primary' : ''}
             >
               <CardContent className="flex items-center gap-3 p-3">
-                <span className="w-8 text-center text-xl">
+                <span className="w-8 shrink-0 text-center text-xl">
                   {MEDALS[i] ?? <span className="text-sm font-bold text-muted-foreground">#{i + 1}</span>}
                 </span>
-                <div className="flex-1">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-muted">
+                  <Avatar config={avatarConfig} size={48} bust />
+                </div>
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">
+                    <span className="font-semibold truncate">
                       {u.username}
                       {isCurrentUser && ' (du)'}
                     </span>
-                    <Badge variant="secondary" className="text-xs">Nivå {u.level}</Badge>
+                    <Badge variant="secondary" className="shrink-0 text-xs">Nivå {u.level}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {u.total_cans} burkar · {u.xp} XP

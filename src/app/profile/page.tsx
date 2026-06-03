@@ -1,11 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { LogoutButton } from './logout-button'
+import { Avatar, DEFAULT_AVATAR } from '@/components/avatar'
+import { AvatarConfig } from '@/types/database'
 
 function getLevel(xp: number) {
   if (xp < 100) return { level: 1, title: 'Novis', next: 100 }
@@ -60,8 +64,11 @@ export default async function ProfilePage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-3">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-4xl">
-                ♻️
+              <div className="overflow-hidden rounded-3xl bg-gradient-to-b from-muted/30 to-muted/70" style={{ width: 110, height: 138 }}>
+                <Avatar
+                  config={(profile?.avatar_config as AvatarConfig | null) ?? DEFAULT_AVATAR}
+                  size={110}
+                />
               </div>
               <div className="text-center">
                 <h2 className="text-xl font-bold">{profile?.username ?? 'Okänd'}</h2>
@@ -153,6 +160,10 @@ export default async function ProfilePage() {
             )}
           </CardContent>
         </Card>
+
+        <Button variant="outline" className="w-full" asChild>
+          <Link href="/onboarding?edit=true">Redigera avatar & smeknamn</Link>
+        </Button>
 
         <LogoutButton />
       </main>

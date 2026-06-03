@@ -1,11 +1,23 @@
 export type PantStatus = 'available' | 'claimed' | 'collected'
 export type UserMode = 'drop' | 'collect'
 
+export interface AvatarConfig {
+  skin: string
+  hair: string
+  hairColor: string
+  top: string
+  topColor: string
+  bottom: string
+  bottomColor: string
+}
+
 export interface Profile {
   id: string
   email: string
   username: string
   avatar_url: string | null
+  avatar_config: AvatarConfig | null
+  onboarded: boolean
   xp: number
   level: number
   total_cans: number
