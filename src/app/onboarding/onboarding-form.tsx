@@ -75,9 +75,13 @@ export function OnboardingForm({ userId, initialUsername, isEdit = false }: Onbo
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="border-b border-border px-4 py-4">
-        <h1 className="text-lg font-bold text-primary">
-          {isEdit ? 'Redigera avatar' : 'Skapa din karaktär'}
-        </h1>
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Pantad" className="h-6 w-auto" />
+          <h1 className="text-lg font-bold text-primary">
+            {isEdit ? 'Redigera avatar' : 'Skapa din karaktär'}
+          </h1>
+        </div>
         {!isEdit && (
           <p className="text-sm text-muted-foreground">Välj smeknamn och anpassa hur du ser ut</p>
         )}

@@ -26,7 +26,11 @@ export default async function LeaderboardPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <span className="text-lg font-bold text-primary">Topplista</span>
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Pantad" className="h-6 w-auto" />
+          <span className="text-lg font-bold text-primary">Topplista</span>
+        </div>
         <ThemeToggle />
       </header>
 

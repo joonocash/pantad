@@ -15,13 +15,15 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="flex items-center justify-between p-4">
-        <span className="text-xl font-bold text-primary">Pantad</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Pantad" className="h-8 w-auto" />
         <ThemeToggle />
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
         <div className="space-y-3">
-          <div className="text-6xl">♻️</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Pantad" className="mx-auto h-32 w-auto" />
           <h1 className="text-4xl font-bold tracking-tight">Pantad</h1>
           <p className="max-w-sm text-lg text-muted-foreground">
             Hjälp till att städa upp pant i din stad. Tjäna pengar och

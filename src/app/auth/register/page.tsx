@@ -56,7 +56,8 @@ export default function RegisterPage() {
       <main className="flex flex-1 items-center justify-center px-4">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
-            <div className="mb-2 text-4xl">🌱</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Pantad" className="mx-auto mb-2 h-16 w-auto" />
             <CardTitle className="text-2xl">Skapa konto</CardTitle>
             <CardDescription>Börja samla pant och göra skillnad</CardDescription>
           </CardHeader>
