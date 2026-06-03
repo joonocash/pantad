@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Map, Trophy, User, BarChart3 } from 'lucide-react'
+import { Map, Trophy, User, BarChart3, Gift } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/map', icon: Map, label: 'Karta' },
   { href: '/leaderboard', icon: BarChart3, label: 'Topplista' },
+  { href: '/challenges', icon: Trophy, label: 'Utmaningar' },
+  { href: '/rewards', icon: Gift, label: 'Belöningar' },
   { href: '/profile', icon: User, label: 'Profil' },
 ]
 
@@ -16,7 +18,7 @@ export function Navbar() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-4">
+      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-1">
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href
           return (
@@ -24,16 +26,16 @@ export function Navbar() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center gap-1 rounded-xl px-4 py-2 text-xs font-medium transition-colors',
+                'flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 transition-colors',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Icon
-                className={cn('h-5 w-5', isActive && 'stroke-[2.5px]')}
-              />
-              <span>{label}</span>
+              <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5px]')} />
+              <span className={cn('text-[9px] font-medium leading-none', isActive && 'font-semibold')}>
+                {label}
+              </span>
             </Link>
           )
         })}
