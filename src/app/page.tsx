@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { PersonaCarousel } from '@/components/persona-carousel'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -44,20 +45,7 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-6 pt-4">
-          {[
-            { icon: '📍', text: 'Lägg ut pant' },
-            { icon: '🗺️', text: 'Se var panten finns' },
-            { icon: '🏆', text: 'Tjäna belöningar' },
-          ].map(({ icon, text }) => (
-            <div key={text} className="flex flex-col items-center gap-2">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl">
-                {icon}
-              </div>
-              <span className="text-xs text-muted-foreground">{text}</span>
-            </div>
-          ))}
-        </div>
+        <PersonaCarousel />
       </main>
     </div>
   )
