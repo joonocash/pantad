@@ -23,7 +23,7 @@ export default async function Home() {
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 text-center">
         <div className="space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Pantad" className="mx-auto h-32 w-auto" />
+          <img src="/logo.png" alt="Pantad" className="mx-auto h-auto" style={{ width: 627, maxWidth: '100%' }} />
           <h1 className="text-4xl font-bold tracking-tight">Pantad</h1>
           <p className="max-w-sm text-lg text-muted-foreground">
             Hjälp till att städa upp pant i din stad. Tjäna pengar och
