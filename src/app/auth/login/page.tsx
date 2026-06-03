@@ -47,10 +47,11 @@ export default function LoginPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4">
-        <Card className="w-full max-w-sm">
+        <div className="flex w-full max-w-sm flex-col items-center gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Pantad" className="h-auto" style={{ width: 627, maxWidth: '100%' }} />
+          <Card className="w-full">
           <CardHeader className="text-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Pantad" className="mx-auto mb-2 h-auto" style={{ width: 627, maxWidth: '100%' }} />
             <CardTitle className="text-2xl">Välkommen tillbaka</CardTitle>
             <CardDescription>Logga in för att fortsätta</CardDescription>
           </CardHeader>
@@ -97,6 +98,7 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
+        </div>
       </main>
     </div>
   )
