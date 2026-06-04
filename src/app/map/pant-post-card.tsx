@@ -6,6 +6,7 @@ import { PantPost } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { X, Navigation, Package, Loader2, CheckCircle2, Pencil } from 'lucide-react'
 
@@ -43,6 +44,7 @@ const STATUS_LABELS: Record<PantPost['status'], { label: string; variant: 'defau
 export function PantPostCard({ post, userLocation, currentUserId, onClose, onEdit }: PantPostCardProps) {
   const [loading, setLoading] = useState(false)
   const [isClaimer, setIsClaimer] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   // Optimistisk lokal status – uppdateras direkt utan att vänta på realtime
   const [localStatus, setLocalStatus] = useState<PantPost['status']>(post.status)
   const supabase = createClient()
@@ -177,12 +179,25 @@ export function PantPostCard({ post, userLocation, currentUserId, onClose, onEdi
           </div>
 
           {post.photo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={post.photo_url}
-              alt="Pant"
-              className="h-16 w-16 rounded-lg object-cover"
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.photo_url}
+                alt="Pant"
+                className="h-16 w-16 cursor-zoom-in rounded-lg object-cover transition-opacity hover:opacity-80"
+                onClick={() => setLightboxOpen(true)}
+              />
+              <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+                <DialogContent className="flex max-h-[90dvh] max-w-[90vw] items-center justify-center bg-black/90 p-2 sm:max-w-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.photo_url}
+                    alt="Pant"
+                    className="max-h-[85dvh] max-w-full rounded-lg object-contain"
+                  />
+                </DialogContent>
+              </Dialog>
+            </>
           )}
 
           <button
