@@ -20,6 +20,22 @@ import { cn } from '@/lib/utils'
 
 const GOTHENBURG_CENTER = { lat: 57.7089, lng: 11.9746 }
 
+type AgeFilter = 'all' | '1h' | '3h' | '24h'
+
+const AGE_FILTER_OPTIONS: { value: AgeFilter; label: string }[] = [
+  { value: 'all', label: 'Alla' },
+  { value: '1h', label: 'Senaste timmen' },
+  { value: '3h', label: 'Senaste 3 timmarna' },
+  { value: '24h', label: 'Senaste 24 timmarna' },
+]
+
+const AGE_FILTER_HOURS: Record<AgeFilter, number | null> = {
+  all: null,
+  '1h': 1,
+  '3h': 3,
+  '24h': 24,
+}
+
 interface MapViewProps {
   initialPosts: (PantPost & { profiles?: Pick<Profile, 'username' | 'avatar_url'> })[]
   profile: Profile | null
@@ -39,6 +55,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
   const [movedLocation, setMovedLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [heatmapPoints, setHeatmapPoints] = useState<{ lat: number; lng: number }[]>([])
+  const [ageFilter, setAgeFilter] = useState<AgeFilter>('all')
   // Ref för att bevara editPost under move-läge (Radix kan rensa state vid sheet-stängning)
   const editPostRef = useRef<PantPost | null>(null)
   // Flagga för att skilja move-stängning från vanlig stängning
@@ -101,6 +118,22 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
         setHeatmapPoints((data ?? []).map((p) => ({ lat: p.latitude, lng: p.longitude })))
       })
   }, [supabase])
+
+  // "Nu" hålls som state (uppdaterad via en timer) istället för att läsas
+  // direkt i render/useMemo, eftersom Date.now() är en oren funktion.
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const filteredPosts = useMemo(() => {
+    const hours = AGE_FILTER_HOURS[ageFilter]
+    if (hours === null) return posts
+    const cutoff = now - hours * 60 * 60 * 1000
+    return posts.filter((post) => new Date(post.created_at).getTime() >= cutoff)
+  }, [posts, ageFilter, now])
 
   async function toggleMode() {
     const newMode = mode === 'collect' ? 'drop' : 'collect'
@@ -177,7 +210,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
           <PantHeatmap points={heatmapPoints} visible={showHeatmap} />
 
           {/* Pins för pant (grupperas i kluster vid utzoomning) */}
-          <PantMarkers posts={posts} onSelect={setSelectedPost} />
+          <PantMarkers posts={filteredPosts} onSelect={setSelectedPost} />
 
           {/* Användarens GPS-position */}
           {userLocation && (
@@ -217,9 +250,29 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
         </button>
       </div>
 
+      {/* Åldersfilter */}
+      <div className="absolute left-4 right-4 top-16 z-10">
+        <div className="flex gap-1.5 overflow-x-auto rounded-full bg-background/95 p-1.5 shadow-lg backdrop-blur">
+          {AGE_FILTER_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setAgeFilter(value)}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                ageFilter === value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Hint i drop-läge */}
       {mode === 'drop' && !showAddSheet && !moveMode && (
-        <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2">
+        <div className="absolute left-1/2 top-28 z-10 -translate-x-1/2">
           <div className="rounded-full bg-black/60 px-4 py-1.5 text-xs text-white backdrop-blur">
             Tryck på kartan för att placera pant
           </div>
@@ -228,7 +281,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
 
       {/* Hint i flytta-läge */}
       {moveMode && (
-        <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2 flex flex-col items-center gap-2">
+        <div className="absolute left-1/2 top-28 z-10 -translate-x-1/2 flex flex-col items-center gap-2">
           <div className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg">
             Tryck på kartan för att flytta panten
           </div>
@@ -272,7 +325,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
       </div>
 
       {/* Legenda */}
-      <div className="absolute right-4 top-16 z-10 flex flex-col gap-1 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur">
+      <div className="absolute right-4 top-28 z-10 flex flex-col gap-1 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur">
         {[
           { color: 'bg-green-500', label: 'Ledig' },
           { color: 'bg-amber-500', label: 'Paxtad' },
