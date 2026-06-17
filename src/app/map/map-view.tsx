@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   APIProvider,
   Map,
   AdvancedMarker,
   MapMouseEvent,
+  useMap,
 } from '@vis.gl/react-google-maps'
+import { MarkerClusterer, type Marker } from '@googlemaps/markerclusterer'
 import { createClient } from '@/lib/supabase/client'
 import { PantPost, Profile } from '@/types/database'
 import { Button } from '@/components/ui/button'
@@ -146,12 +148,6 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
     setSelectedPost(null)
   }
 
-  function getMarkerStyle(status: PantPost['status']) {
-    if (status === 'available') return 'bg-green-500 border-green-600'
-    if (status === 'claimed') return 'bg-amber-500 border-amber-600'
-    return 'bg-gray-400 border-gray-500'
-  }
-
   return (
     <div className="relative flex-1">
       <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
@@ -165,21 +161,8 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
           colorScheme="FOLLOW_SYSTEM"
           onClick={handleMapClick}
         >
-          {/* Pins för pant */}
-          {posts.map((post) => (
-            <AdvancedMarker
-              key={post.id}
-              position={{ lat: post.latitude, lng: post.longitude }}
-              onClick={(e) => { e.stop(); setSelectedPost(post) }}
-            >
-              <div className="flex flex-col items-center cursor-pointer">
-                <div className={`flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-xs font-bold text-white shadow-lg ${getMarkerStyle(post.status)}`}>
-                  🥤 {post.can_count_min}–{post.can_count_max}
-                </div>
-                <div className={`h-2 w-0.5 ${post.status === 'available' ? 'bg-green-500' : 'bg-amber-500'}`} />
-              </div>
-            </AdvancedMarker>
-          ))}
+          {/* Pins för pant (grupperas i kluster vid utzoomning) */}
+          <PantMarkers posts={posts} onSelect={setSelectedPost} />
 
           {/* Användarens GPS-position */}
           {userLocation && (
@@ -301,5 +284,80 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
         onDelete={handleDeletePost}
       />
     </div>
+  )
+}
+
+function getMarkerStyle(status: PantPost['status']) {
+  if (status === 'available') return 'bg-green-500 border-green-600'
+  if (status === 'claimed') return 'bg-amber-500 border-amber-600'
+  return 'bg-gray-400 border-gray-500'
+}
+
+interface PantMarkersProps {
+  posts: PantPost[]
+  onSelect: (post: PantPost) => void
+}
+
+// Egen komponent eftersom useMap() måste anropas under <Map>, inte i samma
+// komponent som renderar den.
+function PantMarkers({ posts, onSelect }: PantMarkersProps) {
+  const map = useMap()
+  const clustererRef = useRef<MarkerClusterer | null>(null)
+  const [markers, setMarkers] = useState<Record<string, Marker>>({})
+
+  useEffect(() => {
+    if (!map) return
+    if (!clustererRef.current) {
+      clustererRef.current = new MarkerClusterer({ map })
+    }
+  }, [map])
+
+  useEffect(() => {
+    clustererRef.current?.clearMarkers()
+    clustererRef.current?.addMarkers(Object.values(markers))
+  }, [markers])
+
+  const setMarkerRef = useCallback((marker: Marker | null, id: string) => {
+    setMarkers((prev) => {
+      if (marker && prev[id] === marker) return prev
+      if (!marker && !prev[id]) return prev
+
+      if (marker) {
+        return { ...prev, [id]: marker }
+      }
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }, [])
+
+  // Stabila ref-callbacks per post-id – krävs så att AdvancedMarker inte
+  // monteras om (och triggar setMarkers) på varje render.
+  const refCallbacks = useMemo(() => {
+    const callbacks: Record<string, (marker: Marker | null) => void> = {}
+    for (const post of posts) {
+      callbacks[post.id] = (marker) => setMarkerRef(marker, post.id)
+    }
+    return callbacks
+  }, [posts, setMarkerRef])
+
+  return (
+    <>
+      {posts.map((post) => (
+        <AdvancedMarker
+          key={post.id}
+          ref={refCallbacks[post.id]}
+          position={{ lat: post.latitude, lng: post.longitude }}
+          onClick={(e) => { e.stop(); onSelect(post) }}
+        >
+          <div className="flex flex-col items-center cursor-pointer">
+            <div className={`flex items-center gap-1 rounded-full border-2 px-2.5 py-1 text-xs font-bold text-white shadow-lg ${getMarkerStyle(post.status)}`}>
+              🥤 {post.can_count_min}–{post.can_count_max}
+            </div>
+            <div className={`h-2 w-0.5 ${post.status === 'available' ? 'bg-green-500' : 'bg-amber-500'}`} />
+          </div>
+        </AdvancedMarker>
+      ))}
+    </>
   )
 }
