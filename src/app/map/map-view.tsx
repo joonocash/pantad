@@ -12,7 +12,7 @@ import { MarkerClusterer, type Marker } from '@googlemaps/markerclusterer'
 import { createClient } from '@/lib/supabase/client'
 import { PantPost, Profile } from '@/types/database'
 import { Button } from '@/components/ui/button'
-import { Plus, Navigation, Package, Flame } from 'lucide-react'
+import { Plus, Navigation, Package, Flame, Filter } from 'lucide-react'
 import { AddPantSheet } from './add-pant-sheet'
 import { EditPantSheet } from './edit-pant-sheet'
 import { PantPostCard } from './pant-post-card'
@@ -56,6 +56,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [heatmapPoints, setHeatmapPoints] = useState<{ lat: number; lng: number }[]>([])
   const [ageFilter, setAgeFilter] = useState<AgeFilter>('all')
+  const [showAgeFilterMenu, setShowAgeFilterMenu] = useState(false)
   // Ref för att bevara editPost under move-läge (Radix kan rensa state vid sheet-stängning)
   const editPostRef = useRef<PantPost | null>(null)
   // Flagga för att skilja move-stängning från vanlig stängning
@@ -250,29 +251,9 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
         </button>
       </div>
 
-      {/* Åldersfilter */}
-      <div className="absolute left-4 right-4 top-16 z-10">
-        <div className="flex gap-1.5 overflow-x-auto rounded-full bg-background/95 p-1.5 shadow-lg backdrop-blur">
-          {AGE_FILTER_OPTIONS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setAgeFilter(value)}
-              className={cn(
-                'shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-                ageFilter === value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Hint i drop-läge */}
       {mode === 'drop' && !showAddSheet && !moveMode && (
-        <div className="absolute left-1/2 top-28 z-10 -translate-x-1/2">
+        <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2">
           <div className="rounded-full bg-black/60 px-4 py-1.5 text-xs text-white backdrop-blur">
             Tryck på kartan för att placera pant
           </div>
@@ -281,7 +262,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
 
       {/* Hint i flytta-läge */}
       {moveMode && (
-        <div className="absolute left-1/2 top-28 z-10 -translate-x-1/2 flex flex-col items-center gap-2">
+        <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2 flex flex-col items-center gap-2">
           <div className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg">
             Tryck på kartan för att flytta panten
           </div>
@@ -308,8 +289,42 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
         </div>
       )}
 
-      {/* Heatmap-toggle */}
-      <div className="absolute right-4 top-4 z-10">
+      {/* Hörn-knappar: åldersfilter + heatmap */}
+      <div className="absolute right-4 top-4 z-10 flex items-start gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setShowAgeFilterMenu((v) => !v)}
+            title="Filtrera efter ålder"
+            className={cn(
+              'flex items-center justify-center rounded-full p-2.5 shadow-lg transition-all',
+              ageFilter !== 'all' || showAgeFilterMenu
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-background/95 text-muted-foreground backdrop-blur'
+            )}
+          >
+            <Filter className="h-4 w-4" />
+          </button>
+
+          {showAgeFilterMenu && (
+            <div className="absolute right-0 top-12 flex flex-col gap-1 rounded-2xl bg-background/95 p-1.5 shadow-lg backdrop-blur">
+              {AGE_FILTER_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => { setAgeFilter(value); setShowAgeFilterMenu(false) }}
+                  className={cn(
+                    'whitespace-nowrap rounded-full px-3 py-1.5 text-left text-xs font-medium transition-colors',
+                    ageFilter === value
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => setShowHeatmap((v) => !v)}
           title="Visa/dölj heatmap"
@@ -325,7 +340,7 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
       </div>
 
       {/* Legenda */}
-      <div className="absolute right-4 top-28 z-10 flex flex-col gap-1 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur">
+      <div className="absolute right-4 top-16 z-10 flex flex-col gap-1 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur">
         {[
           { color: 'bg-green-500', label: 'Ledig' },
           { color: 'bg-amber-500', label: 'Paxtad' },
