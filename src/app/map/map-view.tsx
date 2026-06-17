@@ -12,7 +12,7 @@ import { MarkerClusterer, type Marker } from '@googlemaps/markerclusterer'
 import { createClient } from '@/lib/supabase/client'
 import { PantPost, Profile } from '@/types/database'
 import { Button } from '@/components/ui/button'
-import { Plus, Navigation, Package } from 'lucide-react'
+import { Plus, Navigation, Package, Flame } from 'lucide-react'
 import { AddPantSheet } from './add-pant-sheet'
 import { EditPantSheet } from './edit-pant-sheet'
 import { PantPostCard } from './pant-post-card'
@@ -37,6 +37,8 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [moveMode, setMoveMode] = useState(false)
   const [movedLocation, setMovedLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [heatmapPoints, setHeatmapPoints] = useState<{ lat: number; lng: number }[]>([])
   // Ref för att bevara editPost under move-läge (Radix kan rensa state vid sheet-stängning)
   const editPostRef = useRef<PantPost | null>(null)
   // Flagga för att skilja move-stängning från vanlig stängning
@@ -89,6 +91,16 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
 
     return () => { supabase.removeChannel(channel) }
   }, [supabase, selectedPost])
+
+  // Hämta all historisk pant (inkl. hämtad) för heatmapen
+  useEffect(() => {
+    supabase
+      .from('pant_posts')
+      .select('latitude, longitude')
+      .then(({ data }) => {
+        setHeatmapPoints((data ?? []).map((p) => ({ lat: p.latitude, lng: p.longitude })))
+      })
+  }, [supabase])
 
   async function toggleMode() {
     const newMode = mode === 'collect' ? 'drop' : 'collect'
@@ -161,6 +173,9 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
           colorScheme="FOLLOW_SYSTEM"
           onClick={handleMapClick}
         >
+          {/* Heatmap över historisk pant */}
+          <PantHeatmap points={heatmapPoints} visible={showHeatmap} />
+
           {/* Pins för pant (grupperas i kluster vid utzoomning) */}
           <PantMarkers posts={posts} onSelect={setSelectedPost} />
 
@@ -240,8 +255,24 @@ export function MapView({ initialPosts, profile }: MapViewProps) {
         </div>
       )}
 
+      {/* Heatmap-toggle */}
+      <div className="absolute right-4 top-4 z-10">
+        <button
+          onClick={() => setShowHeatmap((v) => !v)}
+          title="Visa/dölj heatmap"
+          className={cn(
+            'flex items-center justify-center rounded-full p-2.5 shadow-lg transition-all',
+            showHeatmap
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background/95 text-muted-foreground backdrop-blur'
+          )}
+        >
+          <Flame className="h-4 w-4" />
+        </button>
+      </div>
+
       {/* Legenda */}
-      <div className="absolute right-4 top-4 z-10 flex flex-col gap-1 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur">
+      <div className="absolute right-4 top-16 z-10 flex flex-col gap-1 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur">
         {[
           { color: 'bg-green-500', label: 'Ledig' },
           { color: 'bg-amber-500', label: 'Paxtad' },
@@ -291,6 +322,80 @@ function getMarkerStyle(status: PantPost['status']) {
   if (status === 'available') return 'bg-green-500 border-green-600'
   if (status === 'claimed') return 'bg-amber-500 border-amber-600'
   return 'bg-gray-400 border-gray-500'
+}
+
+interface PantHeatmapProps {
+  points: { lat: number; lng: number }[]
+  visible: boolean
+}
+
+interface HeatCell {
+  lat: number
+  lng: number
+  count: number
+}
+
+// Google tog bort visualization.HeatmapLayer ur Maps JS API (deprecated och
+// borttagen). Bygger därför en enkel egen "heatmap" av halvtransparenta
+// cirklar vars storlek/opacitet speglar hur många pant-poster som binnats
+// till samma ruta – ingen extra dependency, bara kärnbiblioteket google.maps.
+function binPoints(points: { lat: number; lng: number }[], precision = 3): HeatCell[] {
+  // Obs: vanlig Record istället för JS-klassen Map – "Map" är redan upptaget
+  // av kart-komponenten som importeras från @vis.gl/react-google-maps.
+  const cells: Record<string, HeatCell> = {}
+  const factor = 10 ** precision
+
+  for (const p of points) {
+    const lat = Math.round(p.lat * factor) / factor
+    const lng = Math.round(p.lng * factor) / factor
+    const key = `${lat},${lng}`
+    const cell = cells[key]
+    if (cell) {
+      cell.count += 1
+    } else {
+      cells[key] = { lat, lng, count: 1 }
+    }
+  }
+
+  return Object.values(cells)
+}
+
+// Egen komponent eftersom useMap() måste anropas under <Map>.
+function PantHeatmap({ points, visible }: PantHeatmapProps) {
+  const map = useMap()
+  const circlesRef = useRef<google.maps.Circle[]>([])
+  const cells = useMemo(() => binPoints(points), [points])
+
+  useEffect(() => {
+    if (!map) return
+
+    circlesRef.current.forEach((circle) => circle.setMap(null))
+    circlesRef.current = []
+
+    if (!visible || cells.length === 0) return
+
+    const maxCount = Math.max(...cells.map((c) => c.count))
+
+    circlesRef.current = cells.map((cell) => {
+      const intensity = cell.count / maxCount
+      return new google.maps.Circle({
+        map,
+        center: { lat: cell.lat, lng: cell.lng },
+        radius: 60 + intensity * 200,
+        strokeWeight: 0,
+        fillColor: '#ef4444',
+        fillOpacity: 0.12 + intensity * 0.38,
+        clickable: false,
+      })
+    })
+
+    return () => {
+      circlesRef.current.forEach((circle) => circle.setMap(null))
+      circlesRef.current = []
+    }
+  }, [map, cells, visible])
+
+  return null
 }
 
 interface PantMarkersProps {
